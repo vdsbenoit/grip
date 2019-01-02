@@ -28,7 +28,7 @@ def create_app(path=None, user_content=False, context=None, username=None,
     elif path == '-':
         source = StdinReader()
     else:
-        source = DirectoryReader(path)
+        source = DirectoryReader(path, True)
 
     # Customize the renderer
     if render_offline:

@@ -14,7 +14,7 @@ from traceback import format_exc
 try:
     from urlparse import urlparse
 except ImportError:
-    from urllib.parse import urlparse
+    from urllib.parse import (urlparse, quote_plus)
 try:
     str_type = basestring
 except NameError:
@@ -29,7 +29,7 @@ from . import __version__
 from .assets import GitHubAssetManager, ReadmeAssetManager
 from .browser import start_browser_when_ready
 from .constants import (
-    DEFAULT_GRIPHOME, DEFAULT_GRIPURL, STYLE_ASSET_URLS_INLINE_FORMAT)
+    DEFAULT_GRIPHOME, DEFAULT_GRIPURL, STYLE_ASSET_URLS_INLINE_FORMAT, SUPPORTED_EXTENSIONS)
 from .exceptions import AlreadyRunningError, ReadmeNotFoundError
 from .readers import DirectoryReader
 from .renderers import GitHubRenderer, ReadmeRenderer
@@ -162,7 +162,15 @@ class Grip(Flask):
         try:
             text = self.reader.read(subpath)
         except ReadmeNotFoundError:
-            abort(404)
+            self.reader.root_filename = os.path.join(self.reader.root_directory, "Directory browser")
+            file_list = ""
+            for f in os.listdir(self.reader.root_directory):
+                if os.path.splitext(f)[1] in [".txt"] + SUPPORTED_EXTENSIONS:
+                    file_list += "- [{}]({})\n".format(f.split('.')[0], f.replace(" ", "%20"))
+            if file_list:
+                text = "## Content of `{}` \n{}".format(os.path.split(self.reader.root_directory)[-1], file_list)
+            else:
+                text = "No files found in `{}`".format(self.reader.root_directory)
 
         # Return binary asset
         if self.reader.is_binary(subpath):
